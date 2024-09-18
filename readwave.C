@@ -15,25 +15,31 @@ int main()
 
   const char command_setsource[] = ":WAVeform:SOURce CHANnel1"; /// Set wave source
   const char command_formatset[] = ":WAV:FORM WORD";            /// WORD  BYTE  ASCii
+  const char command_set_mode[] =  ":WAVeform:MODE RAW";        /// NORMal MAXimum RAW
+  const char command_return_mode[] = ":WAVeform:MODE?";         /// Query the waveform mode
   const char command_returnsource[] = ":WAVeform:SOURce?";      /// Query wave source
   const char command_format[] = ":WAVeform:FORMat?";            /// Query the return format of the waveform
+  const char command_set_point[] = ":WAVeform:POINts 1000";     /// Set number of points
   const char command_points[] = ":WAVeform:POINts?";            /// return the number of Points
   const char command_x_increment[] = ":WAVeform:XINCrement?";   /// Time interval between two adjacent points in the X direction
   const char command_y_increment[] = ":WAVeform:YINCrement?";   /// Query the unit voltage in the Y direction of the current channel source.
   const char command_x_origin[] = ":WAVeform:XORigin?";         /// Start time of waveform data in the X direction.
   const char command_y_origin[] = ":WAVeform:YORigin?";         /// The vertical offset in the Y direction relative to the vertical reference position
+  const char command_x_reference[] = ":WAVeform:XREFerence?";   /// Return XREFerence
   const char command_y_reference[] = ":WAVeform:YREFerence?";   /// Return YREFerence
   const char command_waveform_data[] = ":WAVeform:DATA?";       /// Acquire wave data
 
   char response_format[256];
+  char response_mode[256];
   char response_points[256];
   char response_wave_source[256];
   char response_x_increment[256];
   char response_y_increment[256];
   char response_x_origin[256];
   char response_y_origin[256];
+  char response_x_reference[256];
   char response_y_reference[256];
-  char response_waveform_data[65536];
+  char response_waveform_data[65536*64];
 
   int device, timeout = 3000;
 
@@ -49,6 +55,15 @@ int main()
   lxi_receive(device, response_wave_source, sizeof(response_wave_source), timeout);
   std::cout << "response_wave_source: " << response_wave_source << std::endl;
 
+  // Set wave form mode
+  lxi_send(device, command_set_mode, sizeof(command_set_mode), timeout);
+
+  // Query the return mode of the waveform
+  memset(response_mode, 0, sizeof(response_mode));
+  lxi_send(device, command_return_mode, sizeof(command_return_mode), timeout);
+  lxi_receive(device, response_mode, sizeof(response_mode), timeout);
+  std::cout << "response_mode: " << response_mode << std::endl;
+
   // Set wave form
   lxi_send(device, command_formatset, sizeof(command_formatset), timeout);
 
@@ -58,11 +73,15 @@ int main()
   lxi_receive(device, response_format, sizeof(response_format), timeout);
   std::string format(response_format); // Save wave format
 
+  // Set the number of points
+  lxi_send(device, command_set_point, sizeof(command_set_point), timeout);
+
   // return the number of Points
   memset(response_points, 0, sizeof(response_points));
   lxi_send(device, command_points, sizeof(command_points), timeout);
   lxi_receive(device, response_points, sizeof(response_points), timeout);
   int points = atoi(response_points); // save the number of points
+  std::cout << "Number of points: " << points << std::endl;
 
   // Time interval between two adjacent points in the X direction
   memset(response_x_increment, 0, sizeof(response_x_increment));
@@ -95,6 +114,14 @@ int main()
   lxi_receive(device, response_y_origin, sizeof(response_y_origin), timeout);
   double y_origin = atof(response_y_origin); // Y
   std::cout << "y_origin: " << y_origin << std::endl;
+
+  //return XREFerence
+  memset(response_x_reference, 0, sizeof(response_x_reference));
+  lxi_send(device, command_x_reference, sizeof(command_x_reference), timeout);
+  lxi_receive(device, response_x_reference, sizeof(response_x_reference), timeout);
+  std::cout << "x_reference: " << response_x_reference << std::endl;
+  double x_reference = atof(response_x_reference); // X start
+  std::cout << "x_reference: " << x_reference << std::endl;
 
   // return YREFerence
   memset(response_y_reference, 0, sizeof(response_y_reference));
